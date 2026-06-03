@@ -14,6 +14,7 @@ header{display:flex;align-items:center;gap:14px;padding:9px 18px;background:var(
 .h-title span{color:var(--gold)}
 .h-meta{display:flex;gap:14px;font-size:11px;color:var(--muted);flex-wrap:wrap;flex:1}
 .h-meta b{color:var(--gold)}
+#timer-display{color:var(--red);font-weight:600}
 .btn-submit{background:var(--accent);color:#fff;border:none;border-radius:var(--r);padding:8px 22px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .15s}
 .btn-submit:hover{opacity:.85}
 .main{display:flex;flex:1;overflow:hidden}
@@ -84,7 +85,7 @@ header{display:flex;align-items:center;gap:14px;padding:9px 18px;background:var(
   <div class="h-title">ASAT <span>FISIKA</span> &middot; Kelas X</div>
   <div class="h-meta">
     <span><b>Sekolah:</b> SRMA 3 Tebing Tinggi</span>
-    <span><b>Waktu:</b> 120 Menit</span>
+    <span id="timer-display"><b>Waktu:</b> 100:00</span>
   </div>
   <button class="btn-submit" onclick="openSubmit()">Selesai &amp; Kirim</button>
 </header>
@@ -139,7 +140,7 @@ header{display:flex;align-items:center;gap:14px;padding:9px 18px;background:var(
     <div class="send-status" id="send-status"></div>
     <div class="modal-btns">
       <button class="btn-kirim" id="btn-kirim" onclick="sendToSheet()">&#128228; Kirim ke Google Sheet</button>
-      <button class="btn-tutup" onclick="closeModal()">Tutup</button>
+      <button class="btn-tutup" onclick="closeApplication()">Tutup Aplikasi</button>
     </div>
   </div>
 </div>
@@ -147,14 +148,14 @@ header{display:flex;align-items:center;gap:14px;padding:9px 18px;background:var(
 <script>
 var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzlwoNfu7lc-BBauxtUfwqRcBtPa2YFohE3XHyTNUjt2bJ-oXPLqnrKGCCg03NfKAGp/exec";
 
-// Kunci jawaban otomatis yang diperbarui sesuai request Anda:
+// Kunci jawaban otomatis:
 var ANSWER_KEY = {
   1:"C",  2:"C",  3:"B",  4:"C",  5:"B",
   6:"C",  7:"B",  8:"B",  9:"C",  10:"A",
   11:"B",  12:"B",  13:"C",  14:"D",  15:"C",
   16:"B",  17:"B",  18:"D",  19:"E",  20:"E",
   21:"C",  22:"B",  23:"D",  24:"B",  25:"C",
-  26:"B",  27:"A",  28:"D",  29:"A",  30:"B",
+  26:"B",  27:"S",  28:"D",  29:"A",  30:"B",
   31:"D",  32:"C",  33:"B",  34:"B",  35:"A"
 };
 
@@ -163,7 +164,33 @@ var totalEssay = 5;
 var userAnswers = {};
 var essayAnswers = {};
 
+// Logika Timer 100 Menit
+var totalWaktuDetik = 100 * 60;
+var hitungMundur;
+
+function startTimer() {
+  hitungMundur = setInterval(function() {
+    var menit = Math.floor(totalWaktuDetik / 60);
+    var detik = totalWaktuDetik % 60;
+    
+    menit = menit < 10 ? '0' + menit : menit;
+    detik = detik < 10 ? '0' + detik : detik;
+    
+    document.getElementById('timer-display').innerHTML = `<b>Sisa Waktu:</b> ${menit}:${detik}`;
+    
+    if (totalWaktuDetik <= 0) {
+      clearInterval(hitungMundur);
+      alert("Waktu 100 menit telah habis! Aplikasi akan ditutup.");
+      closeApplication();
+    }
+    
+    totalWaktuDetik--;
+  }, 1000);
+}
+
 function initApp() {
+  startTimer();
+  
   var pgHtml = "";
   for(let i=1; i<=totalPG; i++){
     pgHtml += `<div class="q-row">
@@ -233,7 +260,6 @@ function calculateScore() {
     }
   }
   
-  // Nilai PG skala 100
   var nilai = Math.round((benar / totalPG) * 100);
   var essayCount = Object.values(essayAnswers).filter(v=>v).length;
   
@@ -248,6 +274,8 @@ function openSubmit() {
     alert("Mohon isi Nama dan No. Absen terlebih dahulu.");
     return;
   }
+  
+  clearInterval(hitungMundur); // Hentikan timer setelah klik selesai
   
   var sc = calculateScore();
   document.getElementById("m-score").innerText = sc.nilai;
@@ -264,8 +292,11 @@ function openSubmit() {
   }
 }
 
-function closeModal() {
-  document.getElementById("modal").classList.remove("show");
+function closeApplication() {
+  // Mencoba menutup jendela tab browser bawaan
+  window.close();
+  // Fallback jika diblokir browser biasa / memberikan sinyal aplikasi keluar
+  alert("Aplikasi keluar. Silakan tutup tab atau jendela ini.");
 }
 
 function sendToSheet() {
